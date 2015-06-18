@@ -1,5 +1,7 @@
 # FFT sample program
 
+[![Build Status](https://travis-ci.org/IMOKURI/fft-sample.svg?branch=master)](https://travis-ci.org/IMOKURI/fft-sample)
+
 ### Feature (WIP)
 
 1. Generate Random Number (-1 <= n <= 1) ... *1
