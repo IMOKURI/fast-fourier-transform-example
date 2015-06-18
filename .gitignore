@@ -13,4 +13,3 @@ cabal.config
 *.prof
 *.hp
 *.aux
-*.png

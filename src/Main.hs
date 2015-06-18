@@ -17,7 +17,7 @@ import System.Random
 ----------
 
 sampleN :: Int
-sampleN = 128
+sampleN = 256
 
 randomData :: [Double]
 randomData = take sampleN $ randomRs (-1, 1) $ mkStdGen 1
