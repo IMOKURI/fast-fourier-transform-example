@@ -1,5 +1,7 @@
 module Main where
 
+import Functions
+
 import Math.FFT
 import Data.Array.CArray
 import Data.Complex
@@ -16,27 +18,42 @@ import System.Random
 
 ----------
 
-sampleN :: Int
-sampleN = 256
+numOfData :: Int -- Frequency
+numOfData = 256
 
-randomData :: [Double]
-randomData = take sampleN $ randomRs (-1, 1) $ mkStdGen 1
+rawData :: [Double]
+rawData = take numOfData $ randomRs (-1, 1) $ mkStdGen 1
+
+inputData :: [(Int, Double)]
+inputData = zip [1..] rawData
 
 ----------
 
-inputData :: [(Int, Double)]
-inputData = zip [1..] randomData
+cutoffFrequency :: Double
+cutoffFrequency = 100.0
 
-windowingData :: [(Int, Double)]
-windowingData = map (\(i, v) -> (i, hamming sampleN i v)) inputData
+transBandwidth :: Double
+transBandwidth = 20.0
+
+filterDomain :: [Double]
+filterDomain = [-(fromIntegral nof-1)/2 .. (fromIntegral nof-1)/2]
+  where nof' = round $ 3.3 * (fromIntegral numOfData) / transBandwidth
+        nof = if odd nof' then nof' else nof'+1 :: Int
 
 hamming :: Int -> Int -> Double -> Double
 hamming n i v = v * (0.53836 - 0.46164 * cos((2.0 * pi * fromIntegral i) / (fromIntegral n - 1)));
 
+lowPass :: [Double]
+lowPass = zipWith (hamming (length filterDomain)) [1..] [ k * sinc (pi*k*n) | n <- filterDomain ]
+  where k = 2 * cutoffFrequency / (fromIntegral numOfData)
+
+lowPassedData :: [(Int, Double)]
+lowPassedData = zip [1..numOfData] $ convolve rawData lowPass
+
 ----------
 
 toDFT :: [(Int, Double)] -> [(Int, Complex Double)]
-toDFT = assocs . dft . array (1, sampleN) . map (\(i, v) -> (i, v:+0))
+toDFT = assocs . dft . array (1, numOfData) . map (\(i, v) -> (i, v:+0))
 
 toAmplitude :: [(Int, Complex Double)] -> [(Int, Double)]
 toAmplitude = map (\(i,z) -> (i, magnitude z))
@@ -50,7 +67,7 @@ timeChart :: Renderable ()
 timeChart = toRenderable timeLayout
   where timeLayout = layout_title .~ "Time Scale Data"
                    $ layout_plots .~ [ toPlot inputLine
-                                     , toPlot windowingLine ]
+                                     , toPlot lowPassLine ]
                    $ def
 
         inputLine = plot_lines_title .~ "Input Data"
@@ -58,16 +75,17 @@ timeChart = toRenderable timeLayout
                   $ plot_lines_values .~ [inputData]
                   $ def
 
-        windowingLine = plot_lines_title .~ "Windowing Data"
-                      $ plot_lines_style . line_color .~ opaque green
-                      $ plot_lines_values .~ [windowingData]
-                      $ def
+        lowPassLine = plot_lines_title .~ "Low Passed Data"
+                    $ plot_lines_style . line_color .~ opaque green
+                    $ plot_lines_values .~ [lowPassedData]
+                    $ def
+
 
 frequencyChart :: Renderable ()
 frequencyChart = toRenderable frequencyLayout
   where frequencyLayout = layout_title .~ "Frequency Scale Data"
                         $ layout_plots .~ [ toPlot inputLine'
-                                          , toPlot windowingLine' ]
+                                          , toPlot lowPassLine' ]
                         $ def
 
         inputLine' = plot_lines_title .~ "Input Data"
@@ -75,10 +93,10 @@ frequencyChart = toRenderable frequencyLayout
                    $ plot_lines_values .~ [toAmplitude $ toDFT inputData]
                    $ def
 
-        windowingLine' = plot_lines_title .~ "Windowing Data"
-                       $ plot_lines_style . line_color .~ opaque green
-                       $ plot_lines_values .~ [toAmplitude $ toDFT windowingData]
-                       $ def
+        lowPassLine' = plot_lines_title .~ "Low Passed Data"
+                     $ plot_lines_style . line_color .~ opaque green
+                     $ plot_lines_values .~ [toAmplitude $ toDFT lowPassedData]
+                     $ def
 
 ----------
 
