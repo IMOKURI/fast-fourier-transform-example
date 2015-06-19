@@ -25,5 +25,10 @@ convolve :: (Num a) => [a] -> [a] -> [a]
 convolve hs xs =
   let pad = replicate ((length hs) - 1) 0
       ts  = pad ++ xs
-  in map (sum . zipWith (*) (reverse hs)) (init $ tails ts)
+  in roll (reverse hs) ts
+  where
+    roll :: (Num a) => [a] -> [a] -> [a]
+    roll _  [] = []
+    roll hs ts = let sample = sum $ zipWith (*) ts hs
+                 in sample : roll hs (tail ts)
 

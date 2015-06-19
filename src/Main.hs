@@ -24,8 +24,12 @@ numOfData = 256
 rawData :: [Double]
 rawData = take numOfData $ randomRs (-1, 1) $ mkStdGen 1
 
+windowingData :: [Double]
+windowingData = zipWith (hamming numOfData) [1..] rawData
+
 inputData :: [(Int, Double)]
-inputData = zip [1..] rawData
+inputData = zip [1..] windowingData
+-- inputData = zip [1..] rawData
 
 ----------
 
@@ -33,7 +37,7 @@ cutoffFrequency :: Double
 cutoffFrequency = 100.0
 
 transBandwidth :: Double
-transBandwidth = 20.0
+transBandwidth = 10.0
 
 filterDomain :: [Double]
 filterDomain = [-(fromIntegral nof-1)/2 .. (fromIntegral nof-1)/2]
@@ -48,7 +52,8 @@ lowPass = zipWith (hamming (length filterDomain)) [1..] [ k * sinc (pi*k*n) | n 
   where k = 2 * cutoffFrequency / (fromIntegral numOfData)
 
 lowPassedData :: [(Int, Double)]
-lowPassedData = zip [1..numOfData] $ convolve rawData lowPass
+lowPassedData = zip [1..numOfData] $ convolve lowPass windowingData
+-- lowPassedData = zip [1..numOfData] $ convolve lowPass rawData
 
 ----------
 
