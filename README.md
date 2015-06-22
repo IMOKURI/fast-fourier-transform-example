@@ -13,4 +13,5 @@
 
 ![Time Scale Chart](01_time_scale.png)
 
+![Frequency Scale Chart](02_frequency_scale.png)
 

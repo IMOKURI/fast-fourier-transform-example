@@ -7,9 +7,6 @@ import Data.List (tails)
 
 ----------
 
-epsilon :: RealFloat a => a
-epsilon = encodeFloat 1 (fromIntegral $ 1-floatDigits epsilon)
-
 {- Boosted from Boost http://www.boost.org/boost/math/special_functions/sinc.hpp -}
 sinc :: (RealFloat a) => a -> a
 sinc x =
@@ -19,16 +16,14 @@ sinc x =
  where
   taylor_n_bound = sqrt $ sqrt epsilon
 
+epsilon :: RealFloat a => a
+epsilon = encodeFloat 1 (fromIntegral $ 1-floatDigits epsilon)
+
 ----------
 
 convolve :: (Num a) => [a] -> [a] -> [a]
 convolve hs xs =
   let pad = replicate ((length hs) - 1) 0
       ts  = pad ++ xs
-  in roll (reverse hs) ts
-  where
-    roll :: (Num a) => [a] -> [a] -> [a]
-    roll _  [] = []
-    roll hs ts = let sample = sum $ zipWith (*) ts hs
-                 in sample : roll hs (tail ts)
+  in map (sum . zipWith (*) (reverse hs)) (init $ tails ts)
 

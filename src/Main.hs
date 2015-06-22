@@ -28,13 +28,13 @@ windowingData :: [Double]
 windowingData = zipWith (hamming numOfData) [1..] rawData
 
 inputData :: [(Int, Double)]
-inputData = zip [1..] windowingData
--- inputData = zip [1..] rawData
+inputData = zip [1..] rawData
+-- inputData = zip [1..] windowingData
 
 ----------
 
 cutoffFrequency :: Double
-cutoffFrequency = 100.0
+cutoffFrequency = 80.0
 
 transBandwidth :: Double
 transBandwidth = 10.0
@@ -52,13 +52,16 @@ lowPass = zipWith (hamming (length filterDomain)) [1..] [ k * sinc (pi*k*n) | n 
   where k = 2 * cutoffFrequency / (fromIntegral numOfData)
 
 lowPassedData :: [(Int, Double)]
-lowPassedData = zip [1..numOfData] $ convolve lowPass windowingData
--- lowPassedData = zip [1..numOfData] $ convolve lowPass rawData
+lowPassedData = zip [1..] rc
+  where rc' = convolve lowPass rawData
+--   where rc' = convolve lowPass windowingData
+        l = div (length rc' - numOfData) 2
+        rc = drop l $ take (length rc' - l) rc'
 
 ----------
 
 toDFT :: [(Int, Double)] -> [(Int, Complex Double)]
-toDFT = assocs . dft . array (1, numOfData) . map (\(i, v) -> (i, v:+0))
+toDFT ds = assocs $ dft $ array (1, length ds) $ map (\(i, v) -> (i, v:+0)) ds
 
 toAmplitude :: [(Int, Complex Double)] -> [(Int, Double)]
 toAmplitude = map (\(i,z) -> (i, magnitude z))
