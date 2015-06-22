@@ -14,19 +14,15 @@ import Data.Default.Class
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Backend.Cairo
 
+import System.Random
+
 ----------
 
-testFunc :: Int -> Double
-testFunc n = 0.25 * sin (0.1 * pi * fromIntegral n)
-           + 0.25 * sin (0.3 * pi * fromIntegral n)
-           + 0.25 * sin (0.5 * pi * fromIntegral n)
-           + 0.25 * sin (0.7 * pi * fromIntegral n)
-
 numOfData :: Int -- Frequency
-numOfData = 2048
+numOfData = 256
 
 rawData :: [Double]
-rawData = map testFunc [1..numOfData]
+rawData = take numOfData $ randomRs (-1, 1) $ mkStdGen 1
 
 inputData :: [(Int, Double)]
 inputData = zip [1..] rawData
@@ -34,14 +30,14 @@ inputData = zip [1..] rawData
 ----------
 
 cutoffFrequency :: Double
-cutoffFrequency = 400.0
+cutoffFrequency = 40.0
 
-transBandwidth :: Double
-transBandwidth = 20.0
+transBand :: Double
+transBand = 10.0
 
 filterDomain :: [Double]
 filterDomain = [-(fromIntegral nof-1)/2 .. (fromIntegral nof-1)/2]
-  where nof' = round $ 3.3 * (fromIntegral numOfData) / transBandwidth
+  where nof' = round $ 3.3 * (fromIntegral numOfData) / transBand
         nof = if odd nof' then nof' else nof'+1 :: Int
 
 hamming :: Int -> Int -> Double -> Double
@@ -73,7 +69,7 @@ timeChart = toRenderable timeLayout
                    $ def
 
         inputLine = plot_lines_title .~ "Input Data"
-                  $ plot_lines_style . line_color .~ opaque blue
+                  $ plot_lines_style . line_color .~ opaque skyblue
                   $ plot_lines_values .~ [inputData]
                   $ def
 
@@ -90,7 +86,7 @@ frequencyChart = toRenderable frequencyLayout
                         $ def
 
         inputLine' = plot_lines_title .~ "Input Data"
-                   $ plot_lines_style . line_color .~ opaque blue
+                   $ plot_lines_style . line_color .~ opaque skyblue
                    $ plot_lines_values .~ [toAmplitude $ toDFT inputData]
                    $ def
 
