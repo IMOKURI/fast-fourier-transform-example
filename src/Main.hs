@@ -81,9 +81,13 @@ timeChart = toRenderable timeLayout
 frequencyChart :: Renderable ()
 frequencyChart = toRenderable frequencyLayout
   where frequencyLayout = layout_title .~ "Frequency Scale Data"
+                        $ layout_y_axis .~ yAxis'
                         $ layout_plots .~ [ toPlot inputLine'
                                           , toPlot lowPassLine' ]
                         $ def
+
+        yAxis' = laxis_title .~ "Amplitude"
+               $ def
 
         inputLine' = plot_lines_title .~ "Input Data"
                    $ plot_lines_style . line_color .~ opaque skyblue
