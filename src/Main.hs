@@ -22,15 +22,18 @@ numOfData :: Int -- Frequency
 numOfData = 256
 
 rawData :: [Double]
-rawData = take numOfData $ randomRs (-1, 1) $ mkStdGen 1
+rawData = take numOfData $ randomRs (-1, 1) $ mkStdGen 4
 
 inputData :: [(Int, Double)]
 inputData = zip [1..] rawData
 
 ----------
 
-cutoffFrequency :: Double
-cutoffFrequency = 40.0
+lowCutoffFrequency :: Double
+lowCutoffFrequency = 40.0
+
+highCutoffFrequency :: Double
+highCutoffFrequency = 80.0
 
 transBand :: Double
 transBand = 10.0
@@ -45,11 +48,28 @@ hamming n i v = v * (0.53836 - 0.46164 * cos((2.0 * pi * fromIntegral i) / (from
 
 lowPass :: [Double]
 lowPass = zipWith (hamming (length filterDomain)) [1..] [ k * sinc (pi*k*n) | n <- filterDomain ]
-  where k = 2 * cutoffFrequency / (fromIntegral numOfData)
+  where k = 2 * lowCutoffFrequency / (fromIntegral numOfData)
 
 lowPassedData :: [(Int, Double)]
 lowPassedData = zip [1..] lpd
   where lpd = take numOfData $ drop (div (length filterDomain) 2) $ convolve lowPass rawData
+
+highPass :: [Double]
+highPass = zipWith (hamming (length filterDomain)) [1..] [ sinc (pi*n) - k * sinc (pi*k*n) | n <- filterDomain ]
+  where k = 2 * highCutoffFrequency / (fromIntegral numOfData)
+
+highPassedData :: [(Int, Double)]
+highPassedData = zip [1..] hpd
+  where hpd = take numOfData $ drop (div (length filterDomain) 2) $ convolve highPass rawData
+
+bandPass :: [Double]
+bandPass = zipWith (hamming (length filterDomain)) [1..] [ kh * sinc (pi*kh*n) - kl * sinc (pi*kl*n) | n <- filterDomain ]
+  where kl = 2 * lowCutoffFrequency / (fromIntegral numOfData)
+        kh = 2 * highCutoffFrequency / (fromIntegral numOfData)
+
+bandPassedData :: [(Int, Double)]
+bandPassedData = zip [1..] bpd
+  where bpd = take numOfData $ drop (div (length filterDomain) 2) $ convolve bandPass rawData
 
 ----------
 
@@ -61,12 +81,12 @@ toAmplitude = map (\(i,z) -> (i, magnitude z))
 
 ----------
 
-timeChart :: Renderable ()
-timeChart = toRenderable timeLayout
-  where timeLayout = layout_title .~ "Time Scale Data"
-                   $ layout_plots .~ [ toPlot inputLine
-                                     , toPlot lowPassLine ]
-                   $ def
+timeChartLowPass :: Renderable ()
+timeChartLowPass = toRenderable timeLayoutLowPass
+  where timeLayoutLowPass = layout_title .~ "Time Scale Data(Low Pass)"
+                          $ layout_plots .~ [ toPlot inputLine
+                                            , toPlot lowPassLine ]
+                          $ def
 
         inputLine = plot_lines_title .~ "Input Data"
                   $ plot_lines_style . line_color .~ opaque skyblue
@@ -78,12 +98,48 @@ timeChart = toRenderable timeLayout
                     $ plot_lines_values .~ [lowPassedData]
                     $ def
 
+timeChartHighPass :: Renderable ()
+timeChartHighPass = toRenderable timeLayoutHighPass
+  where timeLayoutHighPass = layout_title .~ "Time Scale Data(High Pass)"
+                           $ layout_plots .~ [ toPlot inputLine
+                                             , toPlot highPassLine ]
+                           $ def
+
+        inputLine = plot_lines_title .~ "Input Data"
+                  $ plot_lines_style . line_color .~ opaque skyblue
+                  $ plot_lines_values .~ [inputData]
+                  $ def
+
+        highPassLine = plot_lines_title .~ "High Passed Data"
+                     $ plot_lines_style . line_color .~ opaque orange
+                     $ plot_lines_values .~ [highPassedData]
+                     $ def
+
+timeChartBandPass :: Renderable ()
+timeChartBandPass = toRenderable timeLayoutBandPass
+  where timeLayoutBandPass = layout_title .~ "Time Scale Data(Band Pass)"
+                           $ layout_plots .~ [ toPlot inputLine
+                                             , toPlot bandPassLine ]
+                           $ def
+
+        inputLine = plot_lines_title .~ "Input Data"
+                  $ plot_lines_style . line_color .~ opaque skyblue
+                  $ plot_lines_values .~ [inputData]
+                  $ def
+
+        bandPassLine = plot_lines_title .~ "Band Passed Data"
+                     $ plot_lines_style . line_color .~ opaque purple
+                     $ plot_lines_values .~ [bandPassedData]
+                     $ def
+
 frequencyChart :: Renderable ()
 frequencyChart = toRenderable frequencyLayout
   where frequencyLayout = layout_title .~ "Frequency Scale Data"
                         $ layout_y_axis .~ yAxis'
                         $ layout_plots .~ [ toPlot inputLine'
-                                          , toPlot lowPassLine' ]
+                                          , toPlot lowPassLine'
+                                          , toPlot highPassLine'
+                                          , toPlot bandPassLine' ]
                         $ def
 
         yAxis' = laxis_title .~ "Amplitude"
@@ -99,11 +155,22 @@ frequencyChart = toRenderable frequencyLayout
                      $ plot_lines_values .~ [toAmplitude $ toDFT lowPassedData]
                      $ def
 
+        highPassLine' = plot_lines_title .~ "High Passed Data"
+                      $ plot_lines_style . line_color .~ opaque orange
+                      $ plot_lines_values .~ [toAmplitude $ toDFT highPassedData]
+                      $ def
+
+        bandPassLine' = plot_lines_title .~ "Band Passed Data"
+                      $ plot_lines_style . line_color .~ opaque purple
+                      $ plot_lines_values .~ [toAmplitude $ toDFT bandPassedData]
+                      $ def
+
 ----------
 
 main :: IO ()
-main = do
-  _ <- renderableToFile def "01_time_scale.png" timeChart
-  _ <- renderableToFile def "02_frequency_scale.png" frequencyChart
-  return ()
+main = renderableToFile def "time_scale_lowpass.png" timeChartLowPass
+    >> renderableToFile def "time_scale_highpass.png" timeChartHighPass
+    >> renderableToFile def "time_scale_bandpass.png" timeChartBandPass
+    >> renderableToFile def "frequency_scale.png" frequencyChart
+    >> return ()
 

@@ -18,7 +18,7 @@ source-repository head
 
 executable fft-sample
   main-is:             Main.hs
-  -- other-modules:       
+  other-modules:       Functions
   -- other-extensions:    
   build-depends:       base >=4.6 && <5
                      , fft
