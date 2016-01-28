@@ -10,7 +10,7 @@ addons:
   apt:
     packages:
       - libgmp-dev
-      - fftw-dev
+      - libfftw3-dev
 
 before_install:
   - mkdir -p ~/.local/bin
