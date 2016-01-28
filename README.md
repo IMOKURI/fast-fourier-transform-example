@@ -1,5 +1,7 @@
 # FFT sample program
 
+[![Build Status](https://travis-ci.org/IMOKURI/fast-fourier-transform-example.svg?branch=master)](https://travis-ci.org/IMOKURI/fast-fourier-transform-example)
+
 ### Feature
 
 1. Generate Random Number (-1 <= n <= 1) ... *1
