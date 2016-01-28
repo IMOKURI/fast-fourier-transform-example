@@ -27,7 +27,7 @@ numOfData :: Int -- Frequency
 numOfData = 256
 
 rawData :: [Double]
-rawData = take numOfData $ randomRs (-1, 1) $ mkStdGen 4
+rawData = take numOfData $ randomRs (-1, 1) $ mkStdGen 7
 
 inputData :: [(Int, Double)]
 inputData = zip [1..] rawData
@@ -75,6 +75,15 @@ bandPass = zipWith (hamming (length filterDomain)) [1..] [ kh * sinc (pi*kh*n) -
 bandPassedData :: [(Int, Double)]
 bandPassedData = zip [1..] bpd
   where bpd = take numOfData $ drop (div (length filterDomain) 2) $ convolve bandPass rawData
+
+bandStop :: [Double]
+bandStop = zipWith (hamming (length filterDomain)) [1..] [ sinc (pi*n) - kh * sinc (pi*kh*n) + kl * sinc (pi*kl*n) | n <- filterDomain ]
+  where kl = 2 * lowCutoffFrequency / fromIntegral numOfData
+        kh = 2 * highCutoffFrequency / fromIntegral numOfData
+
+bandStoppedData :: [(Int, Double)]
+bandStoppedData = zip [1..] bsd
+  where bsd = take numOfData $ drop (div (length filterDomain) 2) $ convolve bandStop rawData
 
 ----------
 
@@ -146,6 +155,23 @@ timeChartBandPass = toRenderable timeLayoutBandPass
         bandPassLine = plot_lines_title .~ "Band Passed Data"
                      $ plot_lines_style . line_color .~ opaque purple
                      $ plot_lines_values .~ [bandPassedData]
+                     $ def
+
+timeChartBandStop :: Renderable ()
+timeChartBandStop = toRenderable timeLayoutBandStop
+  where timeLayoutBandStop = layout_title .~ "Time Scale Data(Band Stop)"
+                           $ layout_plots .~ [ toPlot inputLine
+                                             , toPlot bandStopLine ]
+                           $ def
+
+        inputLine = plot_lines_title .~ "Input Data"
+                  $ plot_lines_style . line_color .~ opaque skyblue
+                  $ plot_lines_values .~ [inputData]
+                  $ def
+
+        bandStopLine = plot_lines_title .~ "Band Stopped Data"
+                     $ plot_lines_style . line_color .~ opaque royalblue
+                     $ plot_lines_values .~ [bandStoppedData]
                      $ def
 
 frequencyChart :: Renderable ()
@@ -226,6 +252,27 @@ frequencyChartBandPass = toRenderable frequencyLayoutBandPass
                       $ plot_lines_values .~ [toAmplitude $ toDFT bandPassedData]
                       $ def
 
+frequencyChartBandStop :: Renderable ()
+frequencyChartBandStop = toRenderable frequencyLayoutBandStop
+  where frequencyLayoutBandStop = layout_title .~ "Frequency Scale Data(Band Stop)"
+                                $ layout_y_axis .~ yAxis'
+                                $ layout_plots .~ [ toPlot inputLine'
+                                                  , toPlot bandStopLine' ]
+                                $ def
+
+        yAxis' = laxis_title .~ "Amplitude"
+               $ def
+
+        inputLine' = plot_lines_title .~ "Input Data"
+                   $ plot_lines_style . line_color .~ opaque skyblue
+                   $ plot_lines_values .~ [toAmplitude $ toDFT inputData]
+                   $ def
+
+        bandStopLine' = plot_lines_title .~ "Band Stopped Data"
+                      $ plot_lines_style . line_color .~ opaque royalblue
+                      $ plot_lines_values .~ [toAmplitude $ toDFT bandStoppedData]
+                      $ def
+
 ----------
 
 decode :: Either String DynamicImage -> IO (Image PixelRGB8)
@@ -240,13 +287,15 @@ main = do
   _ <- renderableToFile def "./png/time_scale_2.png" timeChartLowPass
   _ <- renderableToFile def "./png/time_scale_3.png" timeChartBandPass
   _ <- renderableToFile def "./png/time_scale_4.png" timeChartHighPass
+  _ <- renderableToFile def "./png/time_scale_5.png" timeChartBandStop
   _ <- renderableToFile def "./png/freq_scale_1.png" frequencyChart
   _ <- renderableToFile def "./png/freq_scale_2.png" frequencyChartLowPass
   _ <- renderableToFile def "./png/freq_scale_3.png" frequencyChartBandPass
   _ <- renderableToFile def "./png/freq_scale_4.png" frequencyChartHighPass
+  _ <- renderableToFile def "./png/freq_scale_5.png" frequencyChartBandStop
 
-  timeScaleImages <- sequence [ readImage ("./png/time_scale_" ++ show i ++ ".png") >>= decode | i <- [1..4] ]
-  freqScaleImages <- sequence [ readImage ("./png/freq_scale_" ++ show i ++ ".png") >>= decode | i <- [1..4] ]
+  timeScaleImages <- sequence [ readImage ("./png/time_scale_" ++ show i ++ ".png") >>= decode | i <- [1..5] ]
+  freqScaleImages <- sequence [ readImage ("./png/freq_scale_" ++ show i ++ ".png") >>= decode | i <- [1..5] ]
 
   either putStrLn id $ writeGifAnimation "time_scale.gif" 100 LoopingForever timeScaleImages
   either putStrLn id $ writeGifAnimation "freq_scale.gif" 100 LoopingForever freqScaleImages
