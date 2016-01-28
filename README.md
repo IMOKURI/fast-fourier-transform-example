@@ -7,17 +7,13 @@
 1. Generate Random Number (-1 <= n <= 1) ... *1
 1. Low/High/Band Pass Filtering of *1 ... *2
 1. DFT of *1 and *2 ... *3
-1. Drawing Chart of *1 ~ *3 to PNG Files
+1. Drawing Chart of *1 ~ *3
 
 ### Chart
 
-![Time Scale Chart(Low Pass)](time_scale_lowpass.png)
+![Time Scale Chart](time_scale.gif)
 
-![Time Scale Chart(High Pass)](time_scale_highpass.png)
-
-![Time Scale Chart(Band Pass)](time_scale_bandpass.png)
-
-![Frequency Scale Chart](frequency_scale.png)
+![Frequency Scale Chart](freq_scale.gif)
 
 ### Parameter
 
