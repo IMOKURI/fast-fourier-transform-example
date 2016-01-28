@@ -23,7 +23,7 @@ epsilon = encodeFloat 1 (fromIntegral $ 1-floatDigits epsilon)
 
 convolve :: (Num a) => [a] -> [a] -> [a]
 convolve hs xs =
-  let pad = replicate ((length hs) - 1) 0
+  let pad = replicate (length hs - 1) 0
       ts  = pad ++ xs
   in map (sum . zipWith (*) (reverse hs)) (init $ tails ts)
 
